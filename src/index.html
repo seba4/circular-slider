@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Circular Slider</title>
+    <link
+      rel="stylesheet"
+      href="<%=htmlWebpackPlugin.files.chunks.app.css %>"
+    />
+  </head>
+
+  <body>
+    <div id="slider-wrapper">
+      <div id="slider-legend">
+        Legends
+      </div>
+      <div id="slider-container">
+        <div id="'slider">Slider</div>
+      </div>
+    </div>
+    <script src="<%= htmlWebpackPlugin.files.chunks['circular-slider'].entry %>"></script>
+    <script src="<%= htmlWebpackPlugin.files.chunks.app.entry %>"></script>
+  </body>
+</html>
