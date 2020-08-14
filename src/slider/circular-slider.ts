@@ -24,7 +24,7 @@ export class CircularSlider {
     options: CircularSliderOptions;
     container: HTMLElement;
     SVG: SVGSVGElement;
-    maxRadius: 200;
+    maxRadius = 200;
 
     constructor(options?: Partial<CircularSliderOptions>) {
         this.options = new CircularSliderOptions(options);
@@ -59,6 +59,10 @@ export class CircularSlider {
     initSlider() {
         // Find container where we will render slider
         this.container = document.getElementById(this.options.container);
+
+        if (this.container === null) {
+            throw new Error(`Container with name '${this.options.container}' can't be found.`);
+        }
 
         // Create SVG element with all the required attributes so we can draw slider.
         this.SVG = (document.getElementById('sliderSVG') as Element) as SVGSVGElement;
