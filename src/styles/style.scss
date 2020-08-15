@@ -2,3 +2,39 @@
 
 @import 'modules/variables';
 @import 'modules/base';
+
+
+#slider-wrapper {
+
+  #slider-legend {
+    background: orange;
+  }
+
+  #slider-container {
+    min-width: 400px;
+    svg {
+      width: 100%;
+    }
+    background: blue;
+  }
+}
+
+/* Extra small devices (phones, 600px and down) */
+@media only screen and (max-width: 768px) {
+  .col-xs-12 {
+    flex-basis: 100%;
+  }
+}
+
+///* Small devices (portrait tablets and large phones, 600px and up) */
+@media only screen and (min-width: 768px) {
+  .col-m-6 {
+    flex-basis: 50%;
+  }
+ }
+
+.row {
+  display: flex;
+  flex-flow: row wrap;
+}
+
