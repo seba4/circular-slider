@@ -1,35 +1,19 @@
-export interface ICircularSliderOptions {
-    container: string;
-    color: string;
-    maxValue: number;
-    minValue: number;
-    stepValue: number;
-    radius: number;
-    strokeWidth: number;
-}
-
-class CircularSliderOptions implements ICircularSliderOptions {
-    container: string = 'slider';
-    color: string = 'blue';
-    maxValue: number = 100;
-    minValue: number = 0;
-    stepValue: number = 1;
-    radius: number = 100;
-    strokeWidth: number = 20;
-
-    constructor(options: Partial<CircularSliderOptions>) {
-        Object.assign(this, options);
-    }
-}
+import { CircularSliderOptions } from './circular-slider-options.model';
 
 export class CircularSlider {
     static SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
     options: CircularSliderOptions;
-    container: HTMLElement;
-    SVG: Element;
-    maxRadius = 200;
     circleCenterX: number;
     circleCenterY: number;
+    circumference: number;
+    radius: number;
+    steps: number = 5;
+    currStep: number = 3;
+
+    // Elements
+    container: HTMLElement;
+    SVG: Element;
+    slider: Element;
 
     constructor(options?: Partial<CircularSliderOptions>) {
         this.options = new CircularSliderOptions(options);
@@ -45,8 +29,6 @@ export class CircularSlider {
         const min = this.options.minValue;
         const max = this.options.maxValue;
         const step = this.options.stepValue;
-        const radius = this.options.radius;
-        const minRadius = 0;
 
         if (min > max) {
             throw new Error(`Minimum Value (${min}) must be smaller than maximum Value (${max})!`);
@@ -55,15 +37,13 @@ export class CircularSlider {
         if (max % step !== 0 || min % step !== 0) {
             throw new Error(`Minimum Value ${min} and maximum value ${max} must be divisible by step ${step}!`);
         }
-
-        if (radius > this.maxRadius || radius < minRadius) {
-            throw new Error(`Radius must be between ${minRadius} and ${this.maxRadius}.`);
-        }
     }
 
     initSlider() {
         this.circleCenterX = 0;
         this.circleCenterY = 0;
+        this.circumference = this.options.radius * 2 * Math.PI;
+        this.radius = this.options.radius - this.options.strokeWidth / 2;
         // Find container where we will render slider
         this.container = document.getElementById(this.options.container);
 
@@ -78,17 +58,21 @@ export class CircularSlider {
             this.container.appendChild(this.SVG);
         }
 
+        this.slider = this.createSliderCircle();
+
         this.SVG.appendChild(this.createEmptyCircle());
+        this.SVG.appendChild(this.slider);
     }
 
     createSVG(size: number): Element {
+        const containerWidth = this.container.offsetWidth;
         const svg = document.createElementNS(CircularSlider.SVG_NAMESPACE, 'svg');
         svg.setAttributeNS(null, 'width', size.toString());
         svg.setAttributeNS(null, 'height', size.toString());
         svg.setAttributeNS(
             null,
             'viewBox',
-            `-${this.maxRadius} -${this.maxRadius} ${this.maxRadius * 2} ${this.maxRadius * 2}`
+            `-${containerWidth} -${containerWidth} ${containerWidth * 2} ${containerWidth * 2}`
         );
 
         svg.setAttributeNS(null, 'id', 'sliderSVG');
@@ -97,13 +81,40 @@ export class CircularSlider {
     }
 
     createEmptyCircle(): Element {
+        const circle = this.createCircle();
+        circle.setAttributeNS(null, 'class', 'dashed-circle');
+        circle.setAttributeNS(null, 'stroke', 'lightgray');
+        (circle as SVGSVGElement).style.strokeWidth = `${this.options.strokeWidth}px`;
+        (circle as SVGSVGElement).style.strokeDasharray = '5, 2';
+        return circle;
+    }
+
+    createSliderCircle(): Element {
+        const circle = this.createCircle();
+        circle.setAttributeNS(null, 'class', 'slider');
+        (circle as SVGSVGElement).style.strokeWidth = `${this.options.strokeWidth}px`;
+        (circle as SVGSVGElement).style.stroke = this.options.color;
+
+        // 0 = 100%;
+        // this.circumference = 0%;
+        (circle as SVGSVGElement).style.strokeDashoffset = `${
+            this.circumference - this.currStep * (this.circumference / this.steps - 1)
+        }`;
+        return circle;
+    }
+
+    createCircle(): Element {
         const circle = document.createElementNS(CircularSlider.SVG_NAMESPACE, 'circle');
-        circle.setAttributeNS(null, 'r', (this.options.radius * 2).toString());
+        circle.setAttributeNS(null, 'r', this.radius.toString());
         circle.setAttributeNS(null, 'cx', this.circleCenterX.toString());
         circle.setAttributeNS(null, 'cy', this.circleCenterY.toString());
-        circle.setAttributeNS(null, 'fill', 'red');
-        circle.setAttributeNS(null, 'class', 'dashed-circle');
-        (circle as SVGSVGElement).style.strokeWidth = `${this.options.strokeWidth}px`;
+        circle.setAttributeNS(null, 'transform', `rotate(-90 ${this.circleCenterX} ${this.circleCenterY})`);
+        console.log('CircleCenterX: ', this.circleCenterX);
+        console.log('CircleCenterY: ', this.circleCenterY);
+
+        console.log('circumference: ', this.circumference);
+        circle.setAttributeNS(null, 'stroke-dasharray', this.circumference.toString());
+        circle.setAttributeNS(null, 'fill', 'none');
         return circle;
     }
 }
