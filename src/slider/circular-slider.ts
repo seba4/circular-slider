@@ -8,7 +8,7 @@ export class CircularSlider {
     circumference: number;
     radius: number;
     steps: number = 5;
-    currStep: number = 3;
+    _currStep: number = 3;
 
     // Elements
     container: HTMLElement;
@@ -44,6 +44,7 @@ export class CircularSlider {
         this.circleCenterY = 0;
         this.circumference = this.options.radius * 2 * Math.PI;
         this.radius = this.options.radius - this.options.strokeWidth / 2;
+
         // Find container where we will render slider
         this.container = document.getElementById(this.options.container);
 
@@ -62,6 +63,22 @@ export class CircularSlider {
 
         this.SVG.appendChild(this.createEmptyCircle());
         this.SVG.appendChild(this.slider);
+    }
+
+    set currStep(step: number) {
+        if (isNaN(step) || step < 0 || this.getNrOfSteps() < step) {
+            throw new Error(`Current step can be any number between 0 and ${this.getNrOfSteps()}`);
+        }
+
+        this._currStep = step;
+
+        this.updateSlider();
+    }
+
+    updateSlider() {
+        requestAnimationFrame(() => {
+            (this.slider as SVGSVGElement).style.strokeDashoffset = `${this.calculateSliderCircleOffset()}`;
+        });
     }
 
     createSVG(size: number): Element {
@@ -93,14 +110,24 @@ export class CircularSlider {
         const circle = this.createCircle();
         circle.setAttributeNS(null, 'class', 'slider');
         (circle as SVGSVGElement).style.strokeWidth = `${this.options.strokeWidth}px`;
+        (circle as SVGSVGElement).style.stroke = `rgba(${this.options.color}, 0.5)`;
         (circle as SVGSVGElement).style.stroke = this.options.color;
+        (circle as SVGSVGElement).style.opacity = '0.8';
 
-        // 0 = 100%;
-        // this.circumference = 0%;
-        (circle as SVGSVGElement).style.strokeDashoffset = `${
-            this.circumference - this.currStep * (this.circumference / this.steps - 1)
-        }`;
+        (circle as SVGSVGElement).style.strokeDashoffset = `${this.calculateSliderCircleOffset()}`;
         return circle;
+    }
+
+    calculateSliderCircleOffset(): number {
+        return (this.getNrOfSteps() - this._currStep) * this.getCircumferenceStep();
+    }
+
+    getNrOfSteps(): number {
+        return (this.options.maxValue - this.options.minValue) / this.options.stepValue + 1;
+    }
+
+    getCircumferenceStep(): number {
+        return this.circumference / this.getNrOfSteps();
     }
 
     createCircle(): Element {
@@ -109,10 +136,10 @@ export class CircularSlider {
         circle.setAttributeNS(null, 'cx', this.circleCenterX.toString());
         circle.setAttributeNS(null, 'cy', this.circleCenterY.toString());
         circle.setAttributeNS(null, 'transform', `rotate(-90 ${this.circleCenterX} ${this.circleCenterY})`);
-        console.log('CircleCenterX: ', this.circleCenterX);
-        console.log('CircleCenterY: ', this.circleCenterY);
-
-        console.log('circumference: ', this.circumference);
+        // console.log('CircleCenterX: ', this.circleCenterX);
+        // console.log('CircleCenterY: ', this.circleCenterY);
+        //
+        // console.log('circumference: ', this.circumference);
         circle.setAttributeNS(null, 'stroke-dasharray', this.circumference.toString());
         circle.setAttributeNS(null, 'fill', 'none');
         return circle;

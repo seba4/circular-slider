@@ -11,9 +11,9 @@ export interface ICircularSliderOptions {
 export class CircularSliderOptions implements ICircularSliderOptions {
     container: string = 'slider';
     color: string = 'green';
-    maxValue: number = 100;
+    maxValue: number = 4;
     minValue: number = 0;
-    stepValue: number = 100;
+    stepValue: number = 1;
     radius: number = 200;
     strokeWidth: number = 20;
 
