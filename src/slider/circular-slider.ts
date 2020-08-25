@@ -47,8 +47,8 @@ export class CircularSlider {
     private initSlider() {
         this.circleCenterX = 0;
         this.circleCenterY = 0;
-        this.circumference = this.options.radius * 2 * Math.PI;
         this.radius = this.options.radius - this.options.strokeWidth / 2;
+        this.circumference = this.radius * 2 * Math.PI;
 
         // Find container where we will render slider
         this.container = document.getElementById(this.options.container);
@@ -73,8 +73,8 @@ export class CircularSlider {
     }
 
     set currStep(step: number) {
-        if (isNaN(step) || step < 0 || this.getNrOfSteps() < step) {
-            throw new Error(`Current step can be any number between 0 and ${this.getNrOfSteps()}`);
+        if (isNaN(step) || step < 0 || this.maxSteps < step) {
+            throw new Error(`Current step can be any number between 0 and ${this.maxSteps}`);
         }
 
         this._currStep = step;
@@ -82,7 +82,7 @@ export class CircularSlider {
         this.updateSlider();
     }
 
-    private updateSlider() {
+    private updateSlider(): void {
         requestAnimationFrame(() => {
             (this.slider as SVGSVGElement).style.strokeDashoffset = `${this.calculateSliderCircleOffset()}`;
             (this.handle as SVGSVGElement).style.transform = 'rotate(' + this.step2Radius(this._currStep) + 'deg)';
@@ -146,19 +146,19 @@ export class CircularSlider {
     }
 
     step2Radius(step: number): number {
-        return this.getNrOfSteps() === step ? 359.99 : (360 / this.getNrOfSteps()) * step;
+        return this.maxSteps === step ? 359.99 : (360 / this.maxSteps) * step;
     }
 
     private calculateSliderCircleOffset(): number {
-        return (this.getNrOfSteps() - this._currStep) * this.getCircumferenceStep();
+        return (this.maxSteps - this._currStep) * this.getCircumferenceStep();
     }
 
-    private getNrOfSteps(): number {
+    private get maxSteps(): number {
         return (this.options.maxValue - this.options.minValue) / this.options.stepValue + 1;
     }
 
     private getCircumferenceStep(): number {
-        return this.circumference / this.getNrOfSteps();
+        return this.circumference / this.maxSteps;
     }
 
     private createCircle(): Element {
