@@ -38,3 +38,9 @@
   flex-flow: row wrap;
 }
 
+
+.value {
+  &:before {
+    content: "$";
+  }
+}

@@ -6,6 +6,7 @@ export interface ICircularSliderOptions {
     stepValue: number;
     radius: number;
     strokeWidth: number;
+    onValueChange: (value: number) => void;
 }
 
 export class CircularSliderOptions implements ICircularSliderOptions {
@@ -15,7 +16,8 @@ export class CircularSliderOptions implements ICircularSliderOptions {
     minValue: number = 0;
     stepValue: number = 1;
     radius: number = 200;
-    strokeWidth: number = 20;
+    strokeWidth: number = 50;
+    onValueChange: (value: number) => void;
 
     constructor(options: Partial<CircularSliderOptions>) {
         Object.assign(this, options);

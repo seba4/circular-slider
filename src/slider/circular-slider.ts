@@ -15,6 +15,7 @@ export class CircularSlider {
     SVG: Element;
     slider: Element;
     handle: Element;
+    clickCircle: Element;
 
     constructor(options?: Partial<CircularSliderOptions>) {
         this.options = new CircularSliderOptions(options);
@@ -66,10 +67,20 @@ export class CircularSlider {
 
         this.slider = this.createSliderCircle();
         this.handle = this.createHandle();
+        this.clickCircle = this.createClickCircle();
 
         this.SVG.appendChild(this.createEmptyCircle());
+        this.SVG.appendChild(this.clickCircle);
         this.SVG.appendChild(this.slider);
         this.SVG.appendChild(this.handle);
+
+        this.actOnValueChange();
+    }
+
+    actOnValueChange(): void {
+        if (this.options.onValueChange) {
+            this.options.onValueChange(this.valueFromCurrStep());
+        }
     }
 
     set currStep(step: number) {
@@ -78,7 +89,7 @@ export class CircularSlider {
         }
 
         this._currStep = step;
-
+        this.actOnValueChange();
         this.updateSlider();
     }
 
@@ -87,6 +98,19 @@ export class CircularSlider {
             (this.slider as SVGSVGElement).style.strokeDashoffset = `${this.calculateSliderCircleOffset()}`;
             (this.handle as SVGSVGElement).style.transform = 'rotate(' + this.step2Radius(this._currStep) + 'deg)';
         });
+    }
+
+    private valueFromCurrStep(): number {
+        return this._currStep * this.options.stepValue;
+    }
+
+    private initEventHandlers(): void {
+        this.clickCircle.addEventListener('click', (e) => this.handleSliderClick(e));
+    }
+
+    private handleSliderClick(event: any): void {
+        const nextStep = this._currStep;
+        this.currStep = nextStep;
     }
 
     private createSVG(size: number): Element {
@@ -111,6 +135,13 @@ export class CircularSlider {
         circle.setAttributeNS(null, 'stroke', 'lightgray');
         (circle as SVGSVGElement).style.strokeWidth = `${this.options.strokeWidth}px`;
         (circle as SVGSVGElement).style.strokeDasharray = '5, 2';
+        return circle;
+    }
+
+    private createClickCircle(): Element {
+        const circle = this.createCircle() as SVGSVGElement;
+        circle.style.stroke = 'transparent';
+        circle.style.strokeWidth = `${this.options.strokeWidth}px`;
         return circle;
     }
 
@@ -148,6 +179,8 @@ export class CircularSlider {
     step2Radius(step: number): number {
         return this.maxSteps === step ? 359.99 : (360 / this.maxSteps) * step;
     }
+
+    radius2Step(radius: number): number {}
 
     private calculateSliderCircleOffset(): number {
         return (this.maxSteps - this._currStep) * this.getCircumferenceStep();
