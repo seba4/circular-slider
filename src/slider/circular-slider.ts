@@ -8,8 +8,11 @@ export class CircularSlider {
     circumference: number;
     radius: number;
     steps: number = 5;
+    currValue: number;
+    value: number;
     _currStep: number = 0;
     position: IPosition;
+    isDragging = false;
 
     // Elements
     container: HTMLElement;
@@ -70,6 +73,7 @@ export class CircularSlider {
         this.circleCenterX = 0;
         this.circleCenterY = 0;
         this.radius = this.options.radius - this.options.strokeWidth / 2;
+        this.currValue = this.options.minValue;
         this.position = this.calculateNewPosition(
             this.cord2Radius(this.circleCenterX, this.circleCenterY - this.radius)
         );
@@ -109,15 +113,16 @@ export class CircularSlider {
 
     set currStep(step: number) {
         if (isNaN(step) || step < 0 || this.maxSteps < step) {
-            throw new Error(`Current step can be any number between 0 and ${this.maxSteps}`);
+            debugger;
+            throw new Error(`Current step can be any number between 0 and ${this.maxSteps} (${step})`);
         }
 
         this._currStep = step;
         this.actOnValueChange();
-        this.updateSlider();
+        this.updateSliderAnimation();
     }
 
-    private updateSlider(): void {
+    private updateSliderAnimation(): void {
         requestAnimationFrame(() => {
             (this.slider as SVGSVGElement).style.strokeDashoffset = `${this.calculateSliderCircleOffset()}`;
             (this.handle as SVGSVGElement).style.transform = 'rotate(' + this.step2Radius(this._currStep) + 'deg)';
@@ -125,22 +130,115 @@ export class CircularSlider {
     }
 
     private initEventHandlers(): void {
+        this.container.addEventListener('mousemove', (event) => this.handleDrag(event));
+        this.container.addEventListener('mouseup', (event) => this.cancelDrag(event));
+        this.container.addEventListener('mouseleave', (event) => this.cancelDrag(event));
+
         this.clickCircle.addEventListener('click', (event) => this.handleSliderClick(event));
 
         this.slider.addEventListener('click', (event) => this.handleSliderClick(event));
+
+        this.handle.addEventListener('mousedown', (e) => this.startDrag(e));
+    }
+
+    get dragTolerance(): number {
+        return this.options.strokeWidth * 2;
+    }
+
+    handleDrag(event: Event): void {
+        event.preventDefault();
+        if (!this.isDragging) {
+            return;
+        }
+
+        console.log('Handle Drag');
+
+        const point = (this.SVG as SVGSVGElement).createSVGPoint();
+        const coords = this.transformToLocalCoordinate(point, event as MouseEvent);
+        const mHandleOffsetY = this.position.y - coords.y;
+        const mHandleOffsetX = this.position.x - coords.x;
+
+        if (mHandleOffsetY > this.dragTolerance || mHandleOffsetX > this.dragTolerance) {
+            this.cancelDrag(event);
+        } else {
+            const angleRadians = this.cord2Radius(coords.x, coords.y);
+            this.moveSlider(angleRadians);
+        }
+    }
+
+    canMoveSlider(position: IPosition): boolean {
+        return !(
+            this.position.y < 0 &&
+            ((this.position.x >= 0 && position.x < 0) || (this.position.x < 0 && position.x >= 0))
+        );
+    }
+
+    updateSlider(nextStep: number, newPosition: IPosition): void {
+        // if (this.currStep !== nextStep) {
+        //     console.log('step updated from updateSlider');
+        //     this.currStep = nextStep;
+        // }
+
+        this.position = newPosition;
+        this.value = this.deg2Value(newPosition.degrees);
+
+        if (
+            this.options.onValueChange &&
+            typeof this.options.onValueChange === 'function' &&
+            this.currStep !== nextStep
+        ) {
+            this.options.onValueChange(this.value);
+        }
+    }
+
+    moveSlider(radians: number): void {
+        const newPosition = this.calculateNewPosition(radians);
+
+        if (!this.canMoveSlider(newPosition)) {
+            console.log("We can't move");
+            return;
+        }
+
+        const nextStep = this.deg2Step(newPosition.degrees);
+        this.updateSlider(nextStep, newPosition);
+
+        (this.handle as SVGSVGElement).style.transition = '';
+        (this.slider as SVGSVGElement).style.transition = '';
+
+        requestAnimationFrame(() => {
+            (this.slider as SVGSVGElement).style.strokeDashoffset = `${this.circumference - newPosition.path}`;
+            (this.handle as SVGSVGElement).style.transform = `rotate(${newPosition.degrees}deg)`;
+        });
+    }
+
+    startDrag(event: Event): void {
+        console.log('Start drag');
+        event.preventDefault();
+        this.value = this.currValue;
+        this.isDragging = true;
+    }
+
+    cancelDrag(event: Event): void {
+        console.log('CAncel drag');
+        event.preventDefault();
+        if (this.isDragging) {
+            console.log('step updated from cancelDrag');
+            this.currValue = this.value;
+            this.currStep = this.value2Step(this.currValue);
+        }
+
+        this.isDragging = false;
     }
 
     private handleSliderClick(event: Event): void {
-        // get current click location
         const svgPoint = (this.SVG as SVGSVGElement).createSVGPoint();
         const localCoords = this.transformToLocalCoordinate(svgPoint, event as MouseEvent);
         const newPosition = this.calculateNewPosition(this.cord2Radius(localCoords.x, localCoords.y));
-
-        console.log('New Position is:', newPosition);
         const nextStep = this.deg2Step(newPosition.degrees);
 
-        // change currStep to selectedStep
         if (this._currStep !== nextStep) {
+            this.currValue = this.step2Value(nextStep);
+            this.currValue = this.value = this.step2Value(nextStep);
             this.currStep = nextStep;
         }
     }
@@ -148,12 +246,12 @@ export class CircularSlider {
     transformToLocalCoordinate(point: SVGPoint, event: MouseEvent) {
         point.x = event.clientX;
         point.y = event.clientY;
+
         return point.matrixTransform((this.SVG as SVGSVGElement).getScreenCTM().inverse());
     }
 
     private cord2Radius(x: number, y: number): number {
-        const rad = Math.atan2(x - this.circleCenterX, -y - this.circleCenterY);
-        return rad;
+        return Math.atan2(x - this.circleCenterX, -y - this.circleCenterY);
     }
 
     private deg2Step(deg: number): number {
@@ -169,7 +267,7 @@ export class CircularSlider {
     }
 
     private step2Value(step: number): number {
-        return step * this.options.minValue;
+        return step * this.options.stepValue + this.options.minValue;
     }
 
     private value2Step(val: number): number {
@@ -221,7 +319,7 @@ export class CircularSlider {
         (circle as SVGSVGElement).style.opacity = '0.8';
         (circle as SVGSVGElement).style.transition = 'stroke-dashoffset 0.5s ease-in-out';
 
-        (circle as SVGSVGElement).style.strokeDashoffset = `${this.calculateSliderCircleOffset()}`;
+        (circle as SVGSVGElement).style.strokeDashoffset = `${this.circumference}`;
         return circle;
     }
 
