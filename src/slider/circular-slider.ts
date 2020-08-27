@@ -1,4 +1,4 @@
-import { CircularSliderOptions } from './circular-slider-options.model';
+import { CircularSliderOptions, IPosition } from './circular-slider-options.model';
 
 export class CircularSlider {
     private static SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
@@ -9,6 +9,7 @@ export class CircularSlider {
     radius: number;
     steps: number = 5;
     _currStep: number = 0;
+    position: IPosition;
 
     // Elements
     container: HTMLElement;
@@ -22,6 +23,7 @@ export class CircularSlider {
 
         this.validateOptions();
         this.initSlider();
+        this.initEventHandlers();
     }
 
     /**
@@ -45,10 +47,32 @@ export class CircularSlider {
         return this.options.strokeWidth / 2 + 2;
     }
 
+    calculateNewPosition(angleRad: number): IPosition {
+        const newX = Math.round(Math.sin(angleRad) * this.radius);
+        const newY = Math.round(Math.cos(angleRad) * this.radius) * -1;
+
+        // we have our coordinates right, but angles need to be adjusted to positive number
+        // basically just add 2PI - 360 degrees
+        const radians360 = angleRad < 0 ? angleRad + 2 * Math.PI : angleRad;
+        const angelDegrees = (radians360 * 180.0) / Math.PI;
+        const path = Math.round(this.radius * radians360);
+
+        return {
+            x: Math.floor(angleRad) === 359 ? -1 : newX,
+            y: newY,
+            degrees: angelDegrees,
+            radians: radians360,
+            path: path
+        };
+    }
+
     private initSlider() {
         this.circleCenterX = 0;
         this.circleCenterY = 0;
         this.radius = this.options.radius - this.options.strokeWidth / 2;
+        this.position = this.calculateNewPosition(
+            this.cord2Radius(this.circleCenterX, this.circleCenterY - this.radius)
+        );
         this.circumference = this.radius * 2 * Math.PI;
 
         // Find container where we will render slider
@@ -79,7 +103,7 @@ export class CircularSlider {
 
     actOnValueChange(): void {
         if (this.options.onValueChange) {
-            this.options.onValueChange(this.valueFromCurrStep());
+            this.options.onValueChange(this.step2Value(this._currStep + 1));
         }
     }
 
@@ -100,17 +124,60 @@ export class CircularSlider {
         });
     }
 
-    private valueFromCurrStep(): number {
-        return this._currStep * this.options.stepValue;
-    }
-
     private initEventHandlers(): void {
-        this.clickCircle.addEventListener('click', (e) => this.handleSliderClick(e));
+        this.clickCircle.addEventListener('click', (event) => this.handleSliderClick(event));
+
+        this.slider.addEventListener('click', (event) => this.handleSliderClick(event));
     }
 
-    private handleSliderClick(event: any): void {
-        const nextStep = this._currStep;
-        this.currStep = nextStep;
+    private handleSliderClick(event: Event): void {
+        // get current click location
+        const svgPoint = (this.SVG as SVGSVGElement).createSVGPoint();
+        const localCoords = this.transformToLocalCoordinate(svgPoint, event as MouseEvent);
+        const newPosition = this.calculateNewPosition(this.cord2Radius(localCoords.x, localCoords.y));
+
+        console.log('New Position is:', newPosition);
+        const nextStep = this.deg2Step(newPosition.degrees);
+
+        // change currStep to selectedStep
+        if (this._currStep !== nextStep) {
+            this.currStep = nextStep;
+        }
+    }
+
+    transformToLocalCoordinate(point: SVGPoint, event: MouseEvent) {
+        point.x = event.clientX;
+        point.y = event.clientY;
+        return point.matrixTransform((this.SVG as SVGSVGElement).getScreenCTM().inverse());
+    }
+
+    private cord2Radius(x: number, y: number): number {
+        const rad = Math.atan2(x - this.circleCenterX, -y - this.circleCenterY);
+        return rad;
+    }
+
+    private deg2Step(deg: number): number {
+        const val = this.deg2Value(deg);
+
+        return this.value2Step(val);
+    }
+
+    private deg2Value(deg: number): number {
+        const range = this.options.maxValue - this.options.minValue;
+
+        return Math.round(deg * (range / 360.0)) + this.options.minValue;
+    }
+
+    private step2Value(step: number): number {
+        return step * this.options.minValue;
+    }
+
+    private value2Step(val: number): number {
+        return Math.round((val - this.options.minValue) / this.options.stepValue);
+    }
+
+    step2Radius(step: number): number {
+        return this.maxSteps === step ? 359.99 : (360 / this.maxSteps) * step;
     }
 
     private createSVG(size: number): Element {
@@ -176,18 +243,12 @@ export class CircularSlider {
         return handle;
     }
 
-    step2Radius(step: number): number {
-        return this.maxSteps === step ? 359.99 : (360 / this.maxSteps) * step;
-    }
-
-    radius2Step(radius: number): number {}
-
     private calculateSliderCircleOffset(): number {
         return (this.maxSteps - this._currStep) * this.getCircumferenceStep();
     }
 
     private get maxSteps(): number {
-        return (this.options.maxValue - this.options.minValue) / this.options.stepValue + 1;
+        return (this.options.maxValue - this.options.minValue) / this.options.stepValue;
     }
 
     private getCircumferenceStep(): number {

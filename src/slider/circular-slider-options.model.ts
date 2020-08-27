@@ -23,3 +23,11 @@ export class CircularSliderOptions implements ICircularSliderOptions {
         Object.assign(this, options);
     }
 }
+
+export class IPosition {
+    x: number;
+    y: number;
+    degrees: number;
+    radians: number;
+    path: number;
+}
