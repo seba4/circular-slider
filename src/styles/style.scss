@@ -4,10 +4,35 @@
 @import 'modules/base';
 
 
+body {
+  background: rgb(210, 221, 227);
+  background: linear-gradient(180deg, rgba(210, 221, 227, 1) 0%, rgba(147, 147, 147, 0.9192051820728291) 64%);
+}
+
 #slider-wrapper {
 
   #slider-legend {
-    background: orange;
+    ul {
+      li {
+        list-style-type: none;
+
+        p {
+          span {
+            font-weight: bold;
+            font-size: 2.2em;
+          }
+
+        }
+      }
+    }
+    .legendColor {
+      float:left;
+      width: 25px;
+      height: 25px;
+      background-color:red;
+      margin-top:15px;
+      margin-right: 15px;
+    }
   }
 
   #slider-container {
@@ -15,7 +40,6 @@
     svg {
       width: 100%;
     }
-    background: blue;
   }
 }
 
@@ -30,6 +54,12 @@
 @media only screen and (min-width: 768px) {
   .col-m-6 {
     flex-basis: 50%;
+  }
+  .col-m-5 {
+    flex-basis: 41.666%;
+  }
+  .col-m-8 {
+    flex-basis: 58%;
   }
  }
 

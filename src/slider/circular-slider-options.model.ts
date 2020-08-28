@@ -16,7 +16,7 @@ export class CircularSliderOptions implements ICircularSliderOptions {
     minValue: number = 0;
     stepValue: number = 1;
     radius: number = 200;
-    strokeWidth: number = 50;
+    strokeWidth: number = 20;
     onValueChange: (value: number) => void;
 
     constructor(options: Partial<CircularSliderOptions>) {
