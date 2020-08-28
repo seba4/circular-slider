@@ -43,14 +43,12 @@ body {
   }
 }
 
-/* Extra small devices (phones, 600px and down) */
 @media only screen and (max-width: 768px) {
   .col-xs-12 {
     flex-basis: 100%;
   }
 }
 
-///* Small devices (portrait tablets and large phones, 600px and up) */
 @media only screen and (min-width: 768px) {
   .col-m-6 {
     flex-basis: 50%;
