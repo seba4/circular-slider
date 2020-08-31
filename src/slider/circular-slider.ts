@@ -139,9 +139,13 @@ export class CircularSlider {
 
         this._currStep = step;
         this.actOnValueChange();
+        (this.handle as SVGSVGElement).style.transition = 'all 0.5s ease-in-out';
+        (this.slider as SVGSVGElement).style.transition = 'stroke-dashoffset 0.5s ease-in-out';
+
+        const radius = this.step2Radius(this._currStep);
         requestAnimationFrame(() => {
             (this.slider as SVGSVGElement).style.strokeDashoffset = `${this.calculateSliderCircleOffset()}`;
-            (this.handle as SVGSVGElement).style.transform = 'rotate(' + this.step2Radius(this._currStep) + 'deg)';
+            (this.handle as SVGSVGElement).style.transform = `rotate(${radius}deg)`;
         });
     }
 
@@ -231,16 +235,17 @@ export class CircularSlider {
      */
     handleDrag(event: Event): void {
         event.preventDefault();
-        if (!this.isDragging) {
+        if (this.isDragging === false) {
             return;
         }
 
         const point = (this.SVG as SVGSVGElement).createSVGPoint();
         const coords = this.transformToLocalCoordinate(point, event as MouseEvent);
-        const mHandleOffsetY = this.position.y - coords.y;
-        const mHandleOffsetX = this.position.x - coords.x;
+        const mouseEvent = event as MouseEvent;
+        const mHandleOffsetY = this.position.y - mouseEvent.y;
+        const mHandleOffsetX = this.position.x - mouseEvent.x;
 
-        if (mHandleOffsetY > this.dragTolerance || mHandleOffsetX > this.dragTolerance) {
+        if (mHandleOffsetX > this.dragTolerance || mHandleOffsetY > this.dragTolerance) {
             this.cancelDrag(event);
         } else {
             const angleRadians = this.cord2Radius(coords.x, coords.y);

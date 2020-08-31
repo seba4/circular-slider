@@ -25,7 +25,7 @@ const example2 = new CircularSlider({
     color: 'green',
     container,
     radius: 160,
-    maxValue: 4000,
+    maxValue: 5000,
     minValue: 1000,
     stepValue: 1000,
     onValueChange: (value: number) => updateLegendValue('example2', value)
