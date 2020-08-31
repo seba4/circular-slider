@@ -198,9 +198,12 @@ var CircularSlider = /** @class */ (function () {
             }
             this._currStep = step;
             this.actOnValueChange();
+            this.handle.style.transition = 'all 0.5s ease-in-out';
+            this.slider.style.transition = 'stroke-dashoffset 0.5s ease-in-out';
+            var radius = this.step2Radius(this._currStep);
             requestAnimationFrame(function () {
                 _this.slider.style.strokeDashoffset = "" + _this.calculateSliderCircleOffset();
-                _this.handle.style.transform = 'rotate(' + _this.step2Radius(_this._currStep) + 'deg)';
+                _this.handle.style.transform = "rotate(" + radius + "deg)";
             });
         },
         enumerable: false,
@@ -274,14 +277,15 @@ var CircularSlider = /** @class */ (function () {
      */
     CircularSlider.prototype.handleDrag = function (event) {
         event.preventDefault();
-        if (!this.isDragging) {
+        if (this.isDragging === false) {
             return;
         }
         var point = this.SVG.createSVGPoint();
         var coords = this.transformToLocalCoordinate(point, event);
-        var mHandleOffsetY = this.position.y - coords.y;
-        var mHandleOffsetX = this.position.x - coords.x;
-        if (mHandleOffsetY > this.dragTolerance || mHandleOffsetX > this.dragTolerance) {
+        var mouseEvent = event;
+        var mHandleOffsetY = this.position.y - mouseEvent.y;
+        var mHandleOffsetX = this.position.x - mouseEvent.x;
+        if (mHandleOffsetX > this.dragTolerance || mHandleOffsetY > this.dragTolerance) {
             this.cancelDrag(event);
         }
         else {
